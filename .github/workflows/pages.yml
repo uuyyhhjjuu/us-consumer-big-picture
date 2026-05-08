@@ -1,6 +1,8 @@
 name: Update Data And Deploy Pages
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
   schedule:
     # Daily ETF refresh: 05:20 UTC, after the US market close window.
