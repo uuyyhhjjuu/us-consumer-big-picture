@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Big Picture：百年尺度下的美国消费行业</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#hero">Consumer Big Picture</a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#panel-live">每日市场</a>
+        <a href="#panel-price">走势</a>
+        <a href="#panel-relative">相对回报</a>
+        <a href="#panel-annual">年回报</a>
+        <a href="#panel-distribution">回报分布</a>
+        <a href="#panel-matrix">年化矩阵</a>
+        <a href="#panel-drawdown">回撤</a>
+        <a href="#panel-volatility">波动率</a>
+        <a href="#panel-valuation">PE / EPS / ROE</a>
+        <a href="#panel-positioning">基金仓位</a>
+        <a href="#panel-exposure">行业暴露</a>
+        <a href="#panel-rules">编制规则</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="hero" class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">BIG PICTURE · US CONSUMER SECTORS</p>
+          <h1>百年尺度下的美国消费行业</h1>
+          <p class="subtitle">
+            用 Fama-French 百年行业组合搭建必选消费与可选消费的长期代理视角，
+            同屏观察走势、回报、回撤、波动与相对标普的周期位置。
+          </p>
+        </div>
+        <div class="hero-panel">
+          <div>
+            <span>百年代理区间</span>
+            <strong id="date-range">--</strong>
+          </div>
+          <div>
+            <span>必选消费 CAGR</span>
+            <strong id="hero-staples-cagr">--</strong>
+          </div>
+          <div>
+            <span>可选消费 CAGR</span>
+            <strong id="hero-disc-cagr">--</strong>
+          </div>
+          <div>
+            <span>ETF 日频更新</span>
+            <strong id="daily-range">--</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-strip">
+        <div class="segmented" role="group" aria-label="资产选择">
+          <button class="active" data-asset="staples">必选消费</button>
+          <button data-asset="discretionary">可选消费</button>
+          <button data-asset="market">美国市场</button>
+        </div>
+        <div class="note">
+          百年序列为代理口径：必选 = 食品/软饮/酒类/烟草/家庭用品；可选 = 玩具/娱乐/出版/服装/汽车/零售/餐饮。
+        </div>
+      </section>
+
+      <section class="kpi-grid" id="summary-cards"></section>
+
+      <section id="panel-live" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">DAILY MARKET LAYER</p>
+            <h2>每日市场层：XLP / XLY / SPY</h2>
+            <p>云端版本每天更新 ETF 日频价格，用来补足百年代理数据的尾部变化、相对强弱和当前回撤。</p>
+          </div>
+        </div>
+        <div class="live-grid" id="live-cards"></div>
+        <div id="daily-chart" class="chart"></div>
+      </section>
+
+      <section id="panel-price" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">PRICE INDEX</p>
+            <h2>消费行业长期走势</h2>
+            <p>起点归一为 100。对数坐标更适合观察长期复利斜率，百分比视图更适合看区间涨幅。</p>
+          </div>
+          <div class="tools">
+            <button class="active" data-price-mode="log">对数</button>
+            <button data-price-mode="level">价格</button>
+            <button data-price-mode="percent">百分比</button>
+          </div>
+        </div>
+        <div id="price-chart" class="chart tall"></div>
+      </section>
+
+      <section id="panel-relative" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">RELATIVE RETURN</p>
+            <h2>相对回报</h2>
+            <p>相对美国市场的累计超额收益，以及必选消费相对可选消费的长期强弱。</p>
+          </div>
+        </div>
+        <div id="relative-chart" class="chart"></div>
+      </section>
+
+      <section id="panel-annual" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">CALENDAR YEAR RETURN</p>
+            <h2>年度回报</h2>
+            <p>年度颗粒度下，消费行业的顺风年、压力年和相对市场表现一眼能看出来。</p>
+          </div>
+        </div>
+        <div id="annual-chart" class="chart"></div>
+      </section>
+
+      <section id="panel-distribution" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">RETURN DISTRIBUTION</p>
+            <h2>回报分布</h2>
+            <p>均值只是均值，真实投资年份更常落在两侧。这里训练的是“消费行业肥尾”的直觉。</p>
+          </div>
+        </div>
+        <div id="distribution-chart" class="chart compact"></div>
+      </section>
+
+      <section id="panel-matrix" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">HOLDING PERIOD RETURN</p>
+            <h2>跨年持有年化收益率</h2>
+            <p>横轴为买入年份，纵轴为卖出年份；颜色越绿代表持有期年化收益越高，红色代表亏损。</p>
+          </div>
+        </div>
+        <div id="matrix-chart" class="matrix"></div>
+      </section>
+
+      <section id="panel-drawdown" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">DRAWDOWN</p>
+            <h2>自高点回撤</h2>
+            <p>回撤图回答：当前离历史高点多远？历史上类似压力的深度和持续时间有多常见？</p>
+          </div>
+        </div>
+        <div id="drawdown-chart" class="chart"></div>
+      </section>
+
+      <section id="panel-volatility" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">VOLATILITY</p>
+            <h2>波动率</h2>
+            <p>12 个月与 36 个月滚动年化波动率，用来判断行业当前风险温度。</p>
+          </div>
+        </div>
+        <div id="volatility-chart" class="chart"></div>
+      </section>
+
+      <section id="panel-valuation" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">VALUATION & FUNDAMENTALS</p>
+            <h2>PE / EPS / ROE</h2>
+            <p>这三个模块需要官方 GICS 行业指数、ETF 组合或付费数据库接入。第一版先固定口径和展示方式。</p>
+          </div>
+        </div>
+        <div class="module-grid">
+          <article class="data-module">
+            <span>PE</span>
+            <strong>估值冷热</strong>
+            <p>接入行业指数市盈率后，展示当前 PE、历史分位、相对市场估值溢价。</p>
+          </article>
+          <article class="data-module">
+            <span>EPS</span>
+            <strong>盈利支撑</strong>
+            <p>接入行业 TTM EPS 后，展示盈利趋势、同比变化、衰退期韧性。</p>
+          </article>
+          <article class="data-module">
+            <span>ROE</span>
+            <strong>盈利质量</strong>
+            <p>接入行业 ROE 后，观察必选与可选的资本回报差异和均值回归。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="panel-positioning" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">POSITIONING</p>
+            <h2>基金仓位</h2>
+            <p>仓位模块建议用三层 proxy：ETF 资金流、主动基金行业超配、13F 消费龙头集中度。</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>指标</th><th>用途</th><th>建议数据源</th><th>第一版状态</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>XLP / XLY 资金流</td><td>短期配置热度</td><td>ETF issuer / ETFDB / FactSet</td><td>待接入</td></tr>
+              <tr><td>主动基金行业权重</td><td>机构拥挤度</td><td>Morningstar / FactSet / 13F proxy</td><td>待接入</td></tr>
+              <tr><td>龙头 13F 持仓集中度</td><td>资金偏好的结构变化</td><td>SEC 13F</td><td>待接入</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="panel-exposure" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">EXPOSURE</p>
+            <h2>行业暴露</h2>
+            <p>当前百年代理采用等权行业篮子。后续接入官方成分股后，可切换为市值权重和公司权重。</p>
+          </div>
+        </div>
+        <div class="exposure-grid">
+          <div>
+            <h3>必选消费代理</h3>
+            <div id="staples-exposure"></div>
+          </div>
+          <div>
+            <h3>可选消费代理</h3>
+            <div id="disc-exposure"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-rules" class="panel rules">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">METHODOLOGY</p>
+            <h2>编制规则与数据边界</h2>
+          </div>
+        </div>
+        <div class="rules-grid">
+          <article>
+            <h3>百年代理口径</h3>
+            <p>使用 Kenneth French Data Library 的 49 Industry Portfolios，行业组合为市值加权组合，本页面再对相关行业做等权混合。</p>
+          </article>
+          <article>
+            <h3>官方 GICS 口径</h3>
+            <p>S&P 500 必选消费与可选消费是官方行业指数，但历史长度远短于百年。后续可以作为 1989/1996 至今的“官方口径”切换。</p>
+          </article>
+          <article>
+            <h3>该页面回答什么</h3>
+            <p>它优先回答历史位置、风险收益分布、相对回报和波动温度；估值、盈利、仓位需要第二阶段接入基本面与持仓数据。</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      数据仅供研究参考，不构成投资建议 · Source: Kenneth French Data Library · Consumer Big Picture
+    </footer>
+
+    <script src="./data/consumer-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

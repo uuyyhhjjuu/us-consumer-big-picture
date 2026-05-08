@@ -1,0 +1,61 @@
+name: Update Data And Deploy Pages
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily ETF refresh: 05:20 UTC, after the US market close window.
+    - cron: "20 5 * * 2-6"
+    # Monthly long-history refresh: third day of each month.
+    - cron: "35 5 3 * *"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Refresh data
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event.schedule }}" = "35 5 3 * *" ]; then
+            python scripts/build_data.py --download-ff --download-daily
+          else
+            python scripts/build_data.py --download-daily
+          fi
+
+      - name: Commit refreshed data
+        shell: bash
+        run: |
+          if ! git diff --quiet -- data/consumer-data.js data/*_daily.csv data/*_Portfolios_CSV.zip data/F-F_Research_Data_Factors_CSV.zip; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/consumer-data.js data/*_daily.csv data/*_Portfolios_CSV.zip data/F-F_Research_Data_Factors_CSV.zip
+            git commit -m "Update consumer big picture data"
+            git push
+          fi
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
