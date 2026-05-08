@@ -8,7 +8,7 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#hero">Consumer Big Picture</a>
+      <a class="brand" href="#hero">Big Picture</a>
       <nav class="nav" aria-label="页面导航">
         <a href="#panel-live">每日市场</a>
         <a href="#panel-price">走势</a>
@@ -26,31 +26,17 @@
     </header>
 
     <main>
-      <section id="hero" class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">BIG PICTURE · US CONSUMER SECTORS</p>
-          <h1>百年尺度下的美国消费行业</h1>
-          <p class="subtitle">
-            用 Fama-French 百年行业组合搭建必选消费与可选消费的长期代理视角，
-            同屏观察走势、回报、回撤、波动与相对标普的周期位置。
-          </p>
-        </div>
-        <div class="hero-panel">
-          <div>
-            <span>百年代理区间</span>
-            <strong id="date-range">--</strong>
-          </div>
-          <div>
-            <span>必选消费 CAGR</span>
-            <strong id="hero-staples-cagr">--</strong>
-          </div>
-          <div>
-            <span>可选消费 CAGR</span>
-            <strong id="hero-disc-cagr">--</strong>
-          </div>
-          <div>
-            <span>ETF 日频更新</span>
-            <strong id="daily-range">--</strong>
+      <section id="hero" class="hero-visual">
+        <div id="hero-trend-chart" class="hero-chart" aria-hidden="true"></div>
+        <div class="hero-shade"></div>
+        <div class="hero-content">
+          <h1>Big Picture：百年尺度下的美国消费行业</h1>
+          <p class="tagline">TIME IN THE MARKET · CONSUMER EDITION</p>
+          <div class="hero-pills">
+            <div><span>百年代理区间</span><strong id="date-range">--</strong></div>
+            <div><span>必选消费 CAGR</span><strong id="hero-staples-cagr">--</strong></div>
+            <div><span>可选消费 CAGR</span><strong id="hero-disc-cagr">--</strong></div>
+            <div><span>ETF 日频更新</span><strong id="daily-range">--</strong></div>
           </div>
         </div>
       </section>
@@ -59,7 +45,7 @@
         <div class="segmented" role="group" aria-label="资产选择">
           <button class="active" data-asset="staples">必选消费</button>
           <button data-asset="discretionary">可选消费</button>
-          <button data-asset="market">美国市场</button>
+          <button data-asset="market">标普500代理</button>
         </div>
         <div class="note">
           百年序列为代理口径：必选 = 食品/软饮/酒类/烟草/家庭用品；可选 = 玩具/娱乐/出版/服装/汽车/零售/餐饮。
@@ -78,6 +64,7 @@
         </div>
         <div class="live-grid" id="live-cards"></div>
         <div id="daily-chart" class="chart"></div>
+        <div id="daily-range-control" class="range-control"></div>
       </section>
 
       <section id="panel-price" class="panel">
@@ -94,6 +81,7 @@
           </div>
         </div>
         <div id="price-chart" class="chart tall"></div>
+        <div id="monthly-range-control-price" class="range-control"></div>
       </section>
 
       <section id="panel-relative" class="panel">
@@ -101,10 +89,11 @@
           <div>
             <p class="eyebrow">RELATIVE RETURN</p>
             <h2>相对回报</h2>
-            <p>相对美国市场的累计超额收益，以及必选消费相对可选消费的长期强弱。</p>
+            <p>相对标普500代理的累计超额收益，以及必选消费相对可选消费的长期强弱。</p>
           </div>
         </div>
         <div id="relative-chart" class="chart"></div>
+        <div id="monthly-range-control-relative" class="range-control"></div>
       </section>
 
       <section id="panel-annual" class="panel">
@@ -116,6 +105,7 @@
           </div>
         </div>
         <div id="annual-chart" class="chart"></div>
+        <div id="annual-range-control-return" class="range-control"></div>
       </section>
 
       <section id="panel-distribution" class="panel">
@@ -127,6 +117,7 @@
           </div>
         </div>
         <div id="distribution-chart" class="chart compact"></div>
+        <div id="annual-range-control-distribution" class="range-control"></div>
       </section>
 
       <section id="panel-matrix" class="panel">
@@ -138,6 +129,7 @@
           </div>
         </div>
         <div id="matrix-chart" class="matrix"></div>
+        <div id="annual-range-control-matrix" class="range-control"></div>
       </section>
 
       <section id="panel-drawdown" class="panel">
@@ -149,6 +141,7 @@
           </div>
         </div>
         <div id="drawdown-chart" class="chart"></div>
+        <div id="monthly-range-control-drawdown" class="range-control"></div>
       </section>
 
       <section id="panel-volatility" class="panel">
@@ -160,6 +153,7 @@
           </div>
         </div>
         <div id="volatility-chart" class="chart"></div>
+        <div id="monthly-range-control-volatility" class="range-control"></div>
       </section>
 
       <section id="panel-valuation" class="panel">

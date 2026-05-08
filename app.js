@@ -3,17 +3,29 @@ const data = window.CONSUMER_DATA;
 const labels = {
   staples: "必选消费",
   discretionary: "可选消费",
-  market: "美国市场",
+  market: "标普500代理",
 };
 
 const colors = {
-  staples: "#0f8a5f",
-  discretionary: "#b47b1f",
+  staples: "#43b36b",
+  discretionary: "#d8a13d",
   market: "#111827",
+};
+
+const heroColors = {
+  staples: "#f4bd4a",
+  discretionary: "#4eb5ff",
+  market: "#7ed957",
 };
 
 let activeAsset = "staples";
 let priceMode = "log";
+
+const ranges = {
+  daily: { start: Math.max(0, data.daily.length - 756), end: data.daily.length - 1 },
+  monthly: { start: 0, end: data.monthly.length - 1 },
+  annual: { start: 0, end: data.annual.length - 1 },
+};
 
 const fmtPct = (value, digits = 1) => `${(value * 100).toFixed(digits)}%`;
 const fmtNum = (value, digits = 0) => Number(value).toLocaleString("en-US", { maximumFractionDigits: digits });
@@ -32,22 +44,27 @@ function svgEl(tag, attrs = {}) {
   return el;
 }
 
-function extent(values) {
-  return [Math.min(...values), Math.max(...values)];
+function clear(node) {
+  node.innerHTML = "";
 }
 
-function paddedExtent(values, pad = 0.08) {
-  const [min, max] = extent(values);
-  const span = max - min || Math.abs(max) || 1;
-  return [min - span * pad, max + span * pad];
+function mountSvg(container, viewBox = [0, 0, 1180, 460]) {
+  clear(container);
+  const svg = svgEl("svg", { viewBox: viewBox.join(" "), role: "img" });
+  container.appendChild(svg);
+  return svg;
 }
 
 function pathFor(points) {
   return points.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");
 }
 
-function clear(node) {
-  node.innerHTML = "";
+function paddedExtent(values, pad = 0.08) {
+  const clean = values.filter((v) => Number.isFinite(v));
+  const min = Math.min(...clean);
+  const max = Math.max(...clean);
+  const span = max - min || Math.abs(max) || 1;
+  return [min - span * pad, max + span * pad];
 }
 
 function makeScales(width, height, margin, xValues, yValues) {
@@ -92,11 +109,39 @@ function drawLegend(svg, items, x, y) {
   });
 }
 
-function mountSvg(container, viewBox = [0, 0, 1180, 460]) {
-  clear(container);
-  const svg = svgEl("svg", { viewBox: viewBox.join(" "), role: "img" });
-  container.appendChild(svg);
-  return svg;
+function sliceRange(items, scope) {
+  return items.slice(ranges[scope].start, ranges[scope].end + 1);
+}
+
+function timeLabels(items, formatter = (x) => x.date.slice(0, 4)) {
+  if (items.length < 2) return [["", 0]];
+  const picks = [0, 0.25, 0.5, 0.75, 1];
+  const seen = new Set();
+  return picks
+    .map((p) => {
+      const idx = Math.min(items.length - 1, Math.round((items.length - 1) * p));
+      return [formatter(items[idx]), idx / (items.length - 1)];
+    })
+    .filter(([label]) => {
+      if (seen.has(label)) return false;
+      seen.add(label);
+      return true;
+    });
+}
+
+function nearestIndexByDate(items, date) {
+  let best = 0;
+  let bestDiff = Infinity;
+  const target = new Date(date).getTime();
+  items.forEach((item, idx) => {
+    const raw = item.date.length === 7 ? `${item.date}-15` : item.date;
+    const diff = Math.abs(new Date(raw).getTime() - target);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = idx;
+    }
+  });
+  return best;
 }
 
 function renderHero() {
@@ -106,11 +151,66 @@ function renderHero() {
   $("#hero-disc-cagr").textContent = fmtPct(data.summary.long.discretionary.cagr, 2);
 }
 
+function renderHeroTrend() {
+  const container = $("#hero-trend-chart");
+  const svg = mountSvg(container, [0, 0, 1600, 560]);
+  const months = data.monthly;
+  const keys = ["market", "staples", "discretionary"];
+  const margin = { left: 145, right: 40, top: 40, bottom: 70 };
+  const xValues = months.map((_, i) => i);
+  const yValues = keys.flatMap((key) => months.map((p) => Math.log10(p.levels[key])));
+  const scales = makeScales(1600, 560, margin, xValues, yValues);
+
+  keys.forEach((key) => {
+    const points = months.map((p, i) => [scales.x(i), scales.y(Math.log10(p.levels[key]))]);
+    svg.appendChild(svgEl("path", {
+      d: pathFor(points),
+      fill: "none",
+      stroke: heroColors[key],
+      "stroke-width": key === "market" ? 4 : 2.6,
+      opacity: key === "market" ? 0.95 : 0.72,
+    }));
+  });
+
+  const events = [
+    ["1929-09-01", "1929 · 大萧条", -16, 60],
+    ["1974-09-01", "1974 · 滞胀底", -78, 26],
+    ["1987-10-01", "1987 · 黑色星期一", -92, 48],
+    ["2000-08-01", "2000 · 互联网泡沫", -110, -44],
+    ["2008-10-01", "2008 · 次贷危机", -74, 54],
+    ["2020-03-01", "2020 · 疫情冲击", -170, -52],
+  ];
+  events.forEach(([date, label, dx, dy]) => {
+    const idx = nearestIndexByDate(months, date);
+    const x = scales.x(idx);
+    const y = scales.y(Math.log10(months[idx].levels.market));
+    svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 28, fill: "rgba(230,77,77,0.18)" }));
+    svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 14, fill: "#ff5151" }));
+    const text = svgEl("text", { x: x + dx, y: y + dy, class: "hero-event-label" });
+    text.textContent = label;
+    svg.appendChild(text);
+  });
+
+  const legend = [
+    ["标普500代理", heroColors.market],
+    ["必选消费", heroColors.staples],
+    ["可选消费", heroColors.discretionary],
+  ];
+  legend.forEach(([label, color], idx) => {
+    const x = 1130;
+    const y = 410 + idx * 30;
+    svg.appendChild(svgEl("line", { x1: x, y1: y, x2: x + 32, y2: y, stroke: color, "stroke-width": 4 }));
+    const text = svgEl("text", { x: x + 44, y: y + 5, class: "hero-legend" });
+    text.textContent = label;
+    svg.appendChild(text);
+  });
+}
+
 function renderCards() {
   const stats = data.summary.long[activeAsset];
   const market = data.summary.long.market;
   const cards = [
-    ["长期年化", fmtPct(stats.cagr, 2), `美国市场代理 ${fmtPct(market.cagr, 2)}`],
+    ["长期年化", fmtPct(stats.cagr, 2), `标普500代理 ${fmtPct(market.cagr, 2)}`],
     ["当前回撤", fmtPct(stats.currentDrawdown, 1), `历史最大回撤 ${fmtPct(stats.maxDrawdown, 1)}`],
     ["36M 波动率", fmtPct(stats.currentVol, 1), `历史分位 ${fmtPct(stats.volPercentile, 0)}`],
     ["上涨年份占比", fmtPct(stats.positiveYears, 0), `最好年份 ${fmtPct(stats.bestYear, 0)} / 最差年份 ${fmtPct(stats.worstYear, 0)}`],
@@ -133,82 +233,6 @@ function renderLiveCards() {
   $("#live-cards").innerHTML = cards.join("");
 }
 
-function renderPriceChart() {
-  const container = $("#price-chart");
-  const svg = mountSvg(container, [0, 0, 1180, 560]);
-  const width = 1180;
-  const height = 560;
-  const margin = { top: 46, right: 34, bottom: 54, left: 70 };
-  const months = data.monthly;
-  const keys = ["staples", "discretionary", "market"];
-  const xValues = months.map((_, i) => i);
-  const series = {};
-  keys.forEach((key) => {
-    series[key] = months.map((p) => {
-      const value = p.levels[key];
-      if (priceMode === "log") return Math.log10(value);
-      if (priceMode === "percent") return value / 100 - 1;
-      return value;
-    });
-  });
-  const yValues = keys.flatMap((key) => series[key]);
-  const scales = makeScales(width, height, margin, xValues, yValues);
-  drawAxes(
-    svg,
-    width,
-    height,
-    margin,
-    decadeLabels(months),
-    scales.yMin,
-    scales.yMax,
-    (v) => {
-      if (priceMode === "log") return fmtNum(10 ** v, 0);
-      if (priceMode === "percent") return fmtPct(v, 0);
-      return fmtNum(v, 0);
-    },
-  );
-  keys.forEach((key) => {
-    const points = series[key].map((v, i) => [scales.x(i), scales.y(v)]);
-    svg.appendChild(svgEl("path", { d: pathFor(points), fill: "none", stroke: colors[key], "stroke-width": key === activeAsset ? 3 : 1.9, opacity: key === activeAsset ? 1 : 0.78 }));
-  });
-  drawLegend(svg, keys.map((key) => ({ label: labels[key], color: colors[key] })), 455, 28);
-}
-
-function decadeLabels(months) {
-  const years = months.map((p) => Number(p.date.slice(0, 4)));
-  const first = years[0];
-  const last = years[years.length - 1];
-  const targets = [];
-  for (let y = Math.ceil(first / 20) * 20; y <= last; y += 20) targets.push(y);
-  return targets.map((year) => {
-    const idx = years.findIndex((y) => y >= year);
-    return [String(year), idx / (months.length - 1)];
-  });
-}
-
-function renderRelativeChart() {
-  const container = $("#relative-chart");
-  const svg = mountSvg(container);
-  const width = 1180;
-  const height = 460;
-  const margin = { top: 46, right: 36, bottom: 54, left: 70 };
-  const months = data.monthly;
-  const relKeys = [
-    ["staples", "必选 / 市场", colors.staples],
-    ["discretionary", "可选 / 市场", colors.discretionary],
-    ["staplesVsDiscretionary", "必选 / 可选", "#3157d5"],
-  ];
-  const xValues = months.map((_, i) => i);
-  const yValues = relKeys.flatMap(([key]) => months.map((p) => Math.log10(p.relative[key])));
-  const scales = makeScales(width, height, margin, xValues, yValues);
-  drawAxes(svg, width, height, margin, decadeLabels(months), scales.yMin, scales.yMax, (v) => fmtNum(10 ** v, 1));
-  relKeys.forEach(([key, , color]) => {
-    const points = months.map((p, i) => [scales.x(i), scales.y(Math.log10(p.relative[key]))]);
-    svg.appendChild(svgEl("path", { d: pathFor(points), fill: "none", stroke: color, "stroke-width": 2.4 }));
-  });
-  drawLegend(svg, relKeys.map(([, label, color]) => ({ label, color })), 410, 28);
-}
-
 function renderDailyChart() {
   const container = $("#daily-chart");
   const svg = mountSvg(container);
@@ -216,25 +240,17 @@ function renderDailyChart() {
   const height = 460;
   if (data.meta.dailyIsFallback) {
     const text = svgEl("text", { x: width / 2, y: height / 2 - 10, "text-anchor": "middle", class: "legend" });
-    text.textContent = "本地尚未下载 ETF 日频数据；云端工作流运行后将显示 XLP / XLY / SPY 近三年走势";
+    text.textContent = "本地尚未下载 ETF 日频数据；云端工作流运行后将显示 XLP / XLY / SPY 走势";
     svg.appendChild(text);
-    const sub = svgEl("text", { x: width / 2, y: height / 2 + 18, "text-anchor": "middle", class: "legend" });
-    sub.textContent = "可在本地执行：python scripts/build_data.py --download-daily";
-    svg.appendChild(sub);
     return;
   }
   const margin = { top: 46, right: 36, bottom: 54, left: 70 };
-  const daily = data.daily.slice(-756);
+  const daily = sliceRange(data.daily, "daily");
   const keys = ["staples", "discretionary", "market"];
   const xValues = daily.map((_, i) => i);
-  const yValues = keys.flatMap((key) => daily.map((p) => p.levels[key] / daily[0].levels[key] * 100));
+  const yValues = keys.flatMap((key) => daily.map((p) => (p.levels[key] / daily[0].levels[key]) * 100));
   const scales = makeScales(width, height, margin, xValues, yValues);
-  const xLabels = [
-    [daily[0].date.slice(0, 4), 0],
-    [daily[Math.floor(daily.length / 2)].date.slice(0, 4), 0.5],
-    [daily[daily.length - 1].date, 1],
-  ];
-  drawAxes(svg, width, height, margin, xLabels, scales.yMin, scales.yMax, (v) => fmtNum(v, 0));
+  drawAxes(svg, width, height, margin, timeLabels(daily, (p) => p.date.slice(0, 7)), scales.yMin, scales.yMax, (v) => fmtNum(v, 0));
   keys.forEach((key) => {
     const base = daily[0].levels[key];
     const points = daily.map((p, i) => [scales.x(i), scales.y((p.levels[key] / base) * 100)]);
@@ -243,21 +259,81 @@ function renderDailyChart() {
   drawLegend(svg, keys.map((key) => ({ label: `${labels[key]} ${data.meta.dailyTickers[key].toUpperCase()}`, color: colors[key] })), 395, 28);
 }
 
+function renderPriceChart() {
+  const container = $("#price-chart");
+  const svg = mountSvg(container, [0, 0, 1180, 560]);
+  const width = 1180;
+  const height = 560;
+  const margin = { top: 46, right: 34, bottom: 54, left: 70 };
+  const months = sliceRange(data.monthly, "monthly");
+  const keys = ["staples", "discretionary", "market"];
+  const xValues = months.map((_, i) => i);
+  const series = {};
+  keys.forEach((key) => {
+    const base = months[0].levels[key];
+    series[key] = months.map((p) => {
+      const value = p.levels[key];
+      if (priceMode === "log") return Math.log10(value);
+      if (priceMode === "percent") return value / base - 1;
+      return value;
+    });
+  });
+  const yValues = keys.flatMap((key) => series[key]);
+  const scales = makeScales(width, height, margin, xValues, yValues);
+  drawAxes(svg, width, height, margin, timeLabels(months), scales.yMin, scales.yMax, (v) => {
+    if (priceMode === "log") return fmtNum(10 ** v, 0);
+    if (priceMode === "percent") return fmtPct(v, 0);
+    return fmtNum(v, 0);
+  });
+  keys.forEach((key) => {
+    const points = series[key].map((v, i) => [scales.x(i), scales.y(v)]);
+    svg.appendChild(svgEl("path", { d: pathFor(points), fill: "none", stroke: colors[key], "stroke-width": key === activeAsset ? 3 : 1.9, opacity: key === activeAsset ? 1 : 0.78 }));
+  });
+  drawLegend(svg, keys.map((key) => ({ label: labels[key], color: colors[key] })), 455, 28);
+}
+
+function renderRelativeChart() {
+  const container = $("#relative-chart");
+  const svg = mountSvg(container);
+  const width = 1180;
+  const height = 460;
+  const margin = { top: 46, right: 36, bottom: 54, left: 70 };
+  const months = sliceRange(data.monthly, "monthly");
+  const relKeys = [
+    ["staples", "必选 / 标普500代理", colors.staples],
+    ["discretionary", "可选 / 标普500代理", "#d8a13d"],
+    ["staplesVsDiscretionary", "必选 / 可选", "#3157d5"],
+  ];
+  const xValues = months.map((_, i) => i);
+  const yValues = relKeys.flatMap(([key]) => {
+    const base = months[0].relative[key];
+    return months.map((p) => Math.log10(p.relative[key] / base * 100));
+  });
+  const scales = makeScales(width, height, margin, xValues, yValues);
+  drawAxes(svg, width, height, margin, timeLabels(months), scales.yMin, scales.yMax, (v) => fmtNum(10 ** v, 1));
+  relKeys.forEach(([key, , color]) => {
+    const base = months[0].relative[key];
+    const points = months.map((p, i) => [scales.x(i), scales.y(Math.log10(p.relative[key] / base * 100))]);
+    svg.appendChild(svgEl("path", { d: pathFor(points), fill: "none", stroke: color, "stroke-width": 2.4 }));
+  });
+  drawLegend(svg, relKeys.map(([, label, color]) => ({ label, color })), 320, 28);
+}
+
 function renderAnnualChart() {
   const container = $("#annual-chart");
   const svg = mountSvg(container);
   const width = 1180;
   const height = 460;
   const margin = { top: 36, right: 30, bottom: 58, left: 62 };
-  const annual = data.annual;
+  const annual = sliceRange(data.annual, "annual");
   const values = annual.map((r) => r[activeAsset]);
   const [yMin, yMax] = paddedExtent([...values, 0], 0.05);
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
   const x = (i) => margin.left + (i / annual.length) * plotW;
-  const y = (v) => margin.top + (1 - (v - yMin) / (yMax - yMin)) * plotH;
+  const y = (v) => margin.top + (1 - (v - yMin) / (yMax - yMin || 1)) * plotH;
   const zero = y(0);
-  drawAxes(svg, width, height, margin, yearLabels(annual), yMin, yMax, (v) => fmtPct(v, 0));
+  drawAxes(svg, width, height, margin, timeLabels(annual, (p) => String(p.year)), yMin, yMax, (v) => fmtPct(v, 0));
   svg.appendChild(svgEl("line", { x1: margin.left, x2: width - margin.right, y1: zero, y2: zero, stroke: "#9ca3af", "stroke-width": 1 }));
   const barW = Math.max(2, plotW / annual.length - 1);
   annual.forEach((row, i) => {
@@ -268,25 +344,15 @@ function renderAnnualChart() {
   });
 }
 
-function yearLabels(annual) {
-  const first = annual[0].year;
-  const last = annual[annual.length - 1].year;
-  const targets = [];
-  for (let y = Math.ceil(first / 20) * 20; y <= last; y += 20) targets.push(y);
-  return targets.map((year) => {
-    const idx = annual.findIndex((r) => r.year >= year);
-    return [String(year), idx / (annual.length - 1)];
-  });
-}
-
 function renderDistributionChart() {
   const container = $("#distribution-chart");
   const svg = mountSvg(container, [0, 0, 1180, 340]);
   const width = 1180;
   const height = 340;
   const margin = { top: 30, right: 34, bottom: 70, left: 56 };
-  const rows = data.distribution[activeAsset];
-  const max = Math.max(...rows.map((r) => r.count));
+  const annual = sliceRange(data.annual, "annual");
+  const rows = buildBins(annual, activeAsset);
+  const max = Math.max(...rows.map((r) => r.count), 1);
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
   const barW = plotW / rows.length - 18;
@@ -304,12 +370,27 @@ function renderDistributionChart() {
   });
 }
 
+function buildBins(annual, key) {
+  const bins = [
+    [-1, -0.3, "< -30%"],
+    [-0.3, -0.2, "-30%~-20%"],
+    [-0.2, -0.1, "-20%~-10%"],
+    [-0.1, 0, "-10%~0%"],
+    [0, 0.1, "0%~10%"],
+    [0.1, 0.2, "10%~20%"],
+    [0.2, 0.3, "20%~30%"],
+    [0.3, 0.5, "30%~50%"],
+    [0.5, 10, "> 50%"],
+  ];
+  return bins.map(([lo, hi, label]) => ({ label, count: annual.filter((row) => lo <= row[key] && row[key] < hi).length }));
+}
+
 function renderMatrix() {
   const container = $("#matrix-chart");
   clear(container);
-  const years = data.matrix.years;
-  const matrix = data.matrix.matrices[activeAsset];
-  const cell = 13;
+  const annual = sliceRange(data.annual, "annual");
+  const years = annual.map((row) => row.year);
+  const cell = Math.max(8, Math.min(14, Math.floor(960 / years.length)));
   const left = 54;
   const top = 34;
   const width = left + years.length * cell + 20;
@@ -317,7 +398,7 @@ function renderMatrix() {
   const svg = svgEl("svg", { viewBox: `0 0 ${width} ${height}`, style: `width:${width}px;height:${height}px` });
   container.appendChild(svg);
   years.forEach((year, i) => {
-    if (year % 10 === 0) {
+    if (year % 10 === 0 || i === 0 || i === years.length - 1) {
       const tx = svgEl("text", { x: left + i * cell + cell / 2, y: 22, "text-anchor": "middle", class: "axis" });
       tx.textContent = year;
       svg.appendChild(tx);
@@ -326,23 +407,22 @@ function renderMatrix() {
       svg.appendChild(ty);
     }
   });
-  matrix.forEach((row, yIdx) => {
-    row.forEach((value, xIdx) => {
-      if (value === null) return;
-      const fill = heatColor(value);
-      svg.appendChild(svgEl("rect", { x: left + xIdx * cell, y: top + yIdx * cell, width: cell, height: cell, fill }));
+  annual.forEach((startRow, yIdx) => {
+    let value = 1;
+    annual.forEach((endRow, xIdx) => {
+      if (xIdx < yIdx) return;
+      value *= 1 + endRow[activeAsset];
+      const yearsHeld = xIdx - yIdx + 1;
+      const annualized = value ** (1 / yearsHeld) - 1;
+      svg.appendChild(svgEl("rect", { x: left + xIdx * cell, y: top + yIdx * cell, width: cell, height: cell, fill: heatColor(annualized) }));
     });
   });
 }
 
 function heatColor(value) {
   const clamped = Math.max(-0.25, Math.min(0.25, value));
-  if (clamped >= 0) {
-    const t = clamped / 0.25;
-    return mix("#f8fafc", "#0f8a5f", t);
-  }
-  const t = Math.abs(clamped) / 0.25;
-  return mix("#f8fafc", "#c2413b", t);
+  if (clamped >= 0) return mix("#f8fafc", "#0f8a5f", clamped / 0.25);
+  return mix("#f8fafc", "#c2413b", Math.abs(clamped) / 0.25);
 }
 
 function mix(a, b, t) {
@@ -366,14 +446,14 @@ function renderDrawdownChart() {
   const width = 1180;
   const height = 460;
   const margin = { top: 44, right: 34, bottom: 54, left: 70 };
-  const months = data.monthly;
+  const months = sliceRange(data.monthly, "monthly");
   const keys = ["staples", "discretionary", "market"];
   const xValues = months.map((_, i) => i);
   const yValues = keys.flatMap((key) => months.map((p) => p.drawdown[key])).concat([0]);
   const scales = makeScales(width, height, margin, xValues, yValues);
   scales.yMax = 0;
   scales.y = (v) => margin.top + (1 - (v - scales.yMin) / (scales.yMax - scales.yMin || 1)) * scales.plotH;
-  drawAxes(svg, width, height, margin, decadeLabels(months), scales.yMin, scales.yMax, (v) => fmtPct(v, 0));
+  drawAxes(svg, width, height, margin, timeLabels(months), scales.yMin, scales.yMax, (v) => fmtPct(v, 0));
   keys.forEach((key) => {
     const points = months.map((p, i) => [scales.x(i), scales.y(p.drawdown[key])]);
     svg.appendChild(svgEl("path", { d: pathFor(points), fill: "none", stroke: colors[key], "stroke-width": key === activeAsset ? 2.8 : 1.6, opacity: key === activeAsset ? 1 : 0.7 }));
@@ -387,17 +467,17 @@ function renderVolatilityChart() {
   const width = 1180;
   const height = 460;
   const margin = { top: 44, right: 34, bottom: 54, left: 70 };
-  const months = data.monthly.filter((p) => p.volatility[`${activeAsset}36m`]);
+  const months = sliceRange(data.monthly, "monthly").filter((p) => p.volatility[`${activeAsset}36m`]);
   const xValues = months.map((_, i) => i);
   const s12 = months.map((p) => p.volatility[`${activeAsset}12m`]);
   const s36 = months.map((p) => p.volatility[`${activeAsset}36m`]);
   const scales = makeScales(width, height, margin, xValues, [...s12, ...s36, 0]);
   scales.yMin = 0;
   scales.y = (v) => margin.top + (1 - (v - scales.yMin) / (scales.yMax - scales.yMin || 1)) * scales.plotH;
-  drawAxes(svg, width, height, margin, decadeLabels(months), scales.yMin, scales.yMax, (v) => fmtPct(v, 0));
+  drawAxes(svg, width, height, margin, timeLabels(months), scales.yMin, scales.yMax, (v) => fmtPct(v, 0));
   [
-    [s12, "12M", colors[activeAsset]],
-    [s36, "36M", "#3157d5"],
+    [s12, "12M 波动率", colors[activeAsset]],
+    [s36, "36M 波动率", "#3157d5"],
   ].forEach(([series, , color]) => {
     const points = series.map((v, i) => [scales.x(i), scales.y(v)]);
     svg.appendChild(svgEl("path", { d: pathFor(points), fill: "none", stroke: color, "stroke-width": 2.4 }));
@@ -412,14 +492,116 @@ function renderExposure() {
 
 function renderExposureList(selector, rows) {
   $(selector).innerHTML = rows
-    .map(
-      (row) => `<div class="bar-row"><span>${row.label}</span><div class="bar-track"><div class="bar-fill" style="width:${row.weight}%"></div></div><strong>${row.weight.toFixed(1)}%</strong></div>`,
-    )
+    .map((row) => `<div class="bar-row"><span>${row.label}</span><div class="bar-track"><div class="bar-fill" style="width:${row.weight}%"></div></div><strong>${row.weight.toFixed(1)}%</strong></div>`)
     .join("");
+}
+
+function renderRangeControl(id, scope, label) {
+  const container = $(`#${id}`);
+  const source = scope === "daily" ? data.daily : scope === "monthly" ? data.monthly : data.annual;
+  const state = ranges[scope];
+  const max = source.length - 1;
+  const startValue = valueForInput(source[state.start], scope);
+  const endValue = valueForInput(source[state.end], scope);
+  const inputType = scope === "daily" ? "date" : scope === "monthly" ? "month" : "number";
+  container.innerHTML = `
+    <div class="range-row">
+      <label>拖拽起点
+        <input data-role="start-range" type="range" min="0" max="${max}" value="${state.start}">
+      </label>
+      <label>拖拽终点
+        <input data-role="end-range" type="range" min="0" max="${max}" value="${state.end}">
+      </label>
+      <label>起点
+        <input data-role="start-input" type="${inputType}" value="${startValue}" ${scope === "annual" ? `min="${source[0].year}" max="${source[max].year}"` : ""}>
+      </label>
+      <label>终点
+        <input data-role="end-input" type="${inputType}" value="${endValue}" ${scope === "annual" ? `min="${source[0].year}" max="${source[max].year}"` : ""}>
+      </label>
+      <button data-role="reset">全部</button>
+    </div>
+    <div class="range-caption">${label}：${displayDate(source[state.start], scope)} 至 ${displayDate(source[state.end], scope)}</div>
+  `;
+
+  container.querySelector('[data-role="start-range"]').addEventListener("input", (event) => updateRange(scope, Number(event.target.value), state.end));
+  container.querySelector('[data-role="end-range"]').addEventListener("input", (event) => updateRange(scope, state.start, Number(event.target.value)));
+  container.querySelector('[data-role="start-input"]').addEventListener("change", (event) => updateRange(scope, indexForInput(source, scope, event.target.value), state.end));
+  container.querySelector('[data-role="end-input"]').addEventListener("change", (event) => updateRange(scope, state.start, indexForInput(source, scope, event.target.value)));
+  container.querySelector('[data-role="reset"]').addEventListener("click", () => updateRange(scope, 0, max));
+}
+
+function valueForInput(point, scope) {
+  if (scope === "annual") return point.year;
+  return point.date;
+}
+
+function displayDate(point, scope) {
+  if (scope === "annual") return point.year;
+  return point.date;
+}
+
+function indexForInput(source, scope, value) {
+  if (scope === "annual") {
+    const year = Number(value);
+    return nearestBy(source, (p) => p.year, year);
+  }
+  return nearestIndexByDate(source, scope === "monthly" && value.length === 7 ? `${value}-15` : value);
+}
+
+function nearestBy(source, getter, target) {
+  let best = 0;
+  let diff = Infinity;
+  source.forEach((item, idx) => {
+    const d = Math.abs(getter(item) - target);
+    if (d < diff) {
+      diff = d;
+      best = idx;
+    }
+  });
+  return best;
+}
+
+function updateRange(scope, start, end) {
+  const source = scope === "daily" ? data.daily : scope === "monthly" ? data.monthly : data.annual;
+  const max = source.length - 1;
+  let nextStart = Math.max(0, Math.min(max, start));
+  let nextEnd = Math.max(0, Math.min(max, end));
+  if (nextStart > nextEnd) [nextStart, nextEnd] = [nextEnd, nextStart];
+  if (nextEnd - nextStart < 2) nextEnd = Math.min(max, nextStart + 2);
+  ranges[scope] = { start: nextStart, end: nextEnd };
+  renderChartsForScope(scope);
+  renderRangeControls();
+}
+
+function renderRangeControls() {
+  renderRangeControl("daily-range-control", "daily", "每日 ETF 价格区间");
+  renderRangeControl("monthly-range-control-price", "monthly", "百年月度区间");
+  renderRangeControl("monthly-range-control-relative", "monthly", "百年月度区间");
+  renderRangeControl("monthly-range-control-drawdown", "monthly", "百年月度区间");
+  renderRangeControl("monthly-range-control-volatility", "monthly", "百年月度区间");
+  renderRangeControl("annual-range-control-return", "annual", "年度回报区间");
+  renderRangeControl("annual-range-control-distribution", "annual", "年度回报区间");
+  renderRangeControl("annual-range-control-matrix", "annual", "年化矩阵区间");
+}
+
+function renderChartsForScope(scope) {
+  if (scope === "daily") renderDailyChart();
+  if (scope === "monthly") {
+    renderPriceChart();
+    renderRelativeChart();
+    renderDrawdownChart();
+    renderVolatilityChart();
+  }
+  if (scope === "annual") {
+    renderAnnualChart();
+    renderDistributionChart();
+    renderMatrix();
+  }
 }
 
 function renderAll() {
   renderHero();
+  renderHeroTrend();
   renderCards();
   renderLiveCards();
   renderDailyChart();
@@ -431,6 +613,7 @@ function renderAll() {
   renderDrawdownChart();
   renderVolatilityChart();
   renderExposure();
+  renderRangeControls();
 }
 
 all("[data-asset]").forEach((button) => {
@@ -438,13 +621,13 @@ all("[data-asset]").forEach((button) => {
     activeAsset = button.dataset.asset;
     all("[data-asset]").forEach((b) => b.classList.toggle("active", b === button));
     renderCards();
+    renderDailyChart();
+    renderPriceChart();
     renderAnnualChart();
     renderDistributionChart();
     renderMatrix();
     renderDrawdownChart();
     renderVolatilityChart();
-    renderPriceChart();
-    renderDailyChart();
   });
 });
 
