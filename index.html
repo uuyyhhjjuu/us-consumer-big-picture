@@ -161,24 +161,27 @@
           <div>
             <p class="eyebrow">VALUATION & FUNDAMENTALS</p>
             <h2>PE / EPS / ROE</h2>
-            <p>这三个模块需要官方 GICS 行业指数、ETF 组合或付费数据库接入。第一版先固定口径和展示方式。</p>
+            <p>这里目前是数据接入占位，不展示数值。后续需要接入官方 GICS 行业指数、ETF 持仓聚合或付费数据库后，才会显示 PE、EPS、ROE。</p>
           </div>
         </div>
         <div class="module-grid">
           <article class="data-module">
+            <em class="data-status">待接入正式数据源</em>
             <span>PE</span>
             <strong>估值冷热</strong>
-            <p>接入行业指数市盈率后，展示当前 PE、历史分位、相对市场估值溢价。</p>
+            <p>目标口径：官方行业指数或 ETF 成分股聚合市盈率。接入后展示当前 PE、历史分位、相对标普500估值溢价。</p>
           </article>
           <article class="data-module">
+            <em class="data-status">待接入正式数据源</em>
             <span>EPS</span>
             <strong>盈利支撑</strong>
-            <p>接入行业 TTM EPS 后，展示盈利趋势、同比变化、衰退期韧性。</p>
+            <p>目标口径：行业指数 TTM EPS 或成分股盈利聚合。接入后展示盈利趋势、同比变化、衰退期韧性。</p>
           </article>
           <article class="data-module">
+            <em class="data-status">待接入正式数据源</em>
             <span>ROE</span>
             <strong>盈利质量</strong>
-            <p>接入行业 ROE 后，观察必选与可选的资本回报差异和均值回归。</p>
+            <p>目标口径：行业指数或成分股加权 ROE。接入后观察必选与可选的资本回报差异和均值回归。</p>
           </article>
         </div>
       </section>
@@ -209,17 +212,18 @@
         <div class="panel-head">
           <div>
             <p class="eyebrow">EXPOSURE</p>
-            <h2>行业暴露</h2>
-            <p>当前百年代理采用等权行业篮子。后续接入官方成分股后，可切换为市值权重和公司权重。</p>
+            <h2>行业暴露（百年代理篮子）</h2>
+            <p>当前展示的不是官方 GICS 成分股权重，而是 Fama-French 百年代理组合的等权行业篮子，用来解释长期代理口径。</p>
           </div>
         </div>
+        <p class="data-caveat">正式行业暴露待接入：S&P 500 GICS 行业指数成分股、XLP / XLY ETF holdings，或其他可持续更新的数据源。</p>
         <div class="exposure-grid">
           <div>
-            <h3>必选消费代理</h3>
+            <h3>必选消费代理篮子</h3>
             <div id="staples-exposure"></div>
           </div>
           <div>
-            <h3>可选消费代理</h3>
+            <h3>可选消费代理篮子</h3>
             <div id="disc-exposure"></div>
           </div>
         </div>
