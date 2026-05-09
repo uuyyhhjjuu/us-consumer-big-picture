@@ -1,0 +1,4 @@
+date,sector,label,pe_ttm,eps_ttm,roe_ttm,source
+2026-05-08,staples,标普500必选消费,,,,"manual example"
+2026-05-08,discretionary,标普500可选消费,,,,"manual example"
+2026-05-08,market,标普500,,,,"manual example"

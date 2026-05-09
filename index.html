@@ -18,6 +18,7 @@
         <a href="#panel-matrix">年化矩阵</a>
         <a href="#panel-drawdown">回撤</a>
         <a href="#panel-volatility">波动率</a>
+        <a href="#panel-data">数据层</a>
         <a href="#panel-valuation">PE / EPS / ROE</a>
         <a href="#panel-positioning">基金仓位</a>
         <a href="#panel-exposure">行业暴露</a>
@@ -156,15 +157,40 @@
         <div id="monthly-range-control-volatility" class="range-control"></div>
       </section>
 
+      <section id="panel-data" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">DATA ENGINE</p>
+            <h2>数据接入路线</h2>
+            <p>竞赛提交版优先保证公开数据可复现、边界清晰，并为 Wind / CSV / ETF holdings 留好同一套替换入口。</p>
+          </div>
+        </div>
+        <div id="data-readiness" class="status-grid"></div>
+        <div class="rules-grid">
+          <article>
+            <h3>明晚提交版</h3>
+            <p>百年走势、年回报、相对回报、回撤、波动率使用 Fama-French 与 ETF 公开数据自动生成，足够支撑 Big Picture 主叙事。</p>
+          </article>
+          <article>
+            <h3>赛前增强版</h3>
+            <p>把 Wind 或 Excel 导出的 PE、EPS、ROE、行业权重保存为 CSV，重新运行构建脚本即可把估值和暴露模块点亮。</p>
+          </article>
+          <article>
+            <h3>长期产品版</h3>
+            <p>WindPy、ETF issuer holdings、SEC 13F、付费财务 API 可以逐步替换 CSV 层，但前端图表和展示结构不需要重写。</p>
+          </article>
+        </div>
+      </section>
+
       <section id="panel-valuation" class="panel">
         <div class="panel-head">
           <div>
             <p class="eyebrow">VALUATION & FUNDAMENTALS</p>
             <h2>PE / EPS / ROE</h2>
-            <p>这里目前是数据接入占位，不展示数值。后续需要接入官方 GICS 行业指数、ETF 持仓聚合或付费数据库后，才会显示 PE、EPS、ROE。</p>
+            <p>这里已经预留 CSV 快速接入口；正式演示前可以先用 Wind / Excel 快照点亮，后续再替换为 WindPy 或付费 API 自动更新。</p>
           </div>
         </div>
-        <div class="module-grid">
+        <div id="valuation-modules" class="module-grid">
           <article class="data-module">
             <em class="data-status">待接入正式数据源</em>
             <span>PE</span>

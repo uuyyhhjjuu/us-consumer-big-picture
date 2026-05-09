@@ -1,0 +1,7 @@
+sector,name,label,weight,source
+staples,Food & Staples Retailing,食品与必需品零售,,manual example
+staples,Beverages,饮料,,manual example
+staples,Household Products,家庭用品,,manual example
+discretionary,Automobiles,汽车,,manual example
+discretionary,Broadline Retail,综合零售,,manual example
+discretionary,Hotels Restaurants & Leisure,酒店餐饮休闲,,manual example

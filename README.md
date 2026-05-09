@@ -53,3 +53,15 @@ The long-history consumer sector series are proxy portfolios, not official S&P G
 - SPY: SPDR S&P 500 ETF Trust
 
 PE, EPS, ROE, fund positioning, and official constituent-change modules are structured in the UI but require a later official or licensed data source connection.
+
+## Manual Data Bridge
+
+If WindPy is temporarily unavailable, the site can still accept presentation-ready snapshots from CSV files:
+
+1. Copy `data/manual/valuation.csv.example` to `data/manual/valuation.csv`.
+2. Fill `pe_ttm`, `eps_ttm`, and `roe_ttm` for `staples`, `discretionary`, and `market`.
+3. Copy `data/manual/exposure.csv.example` to `data/manual/exposure.csv`.
+4. Fill current weights from Wind, Excel, ETF holdings, or another licensed source.
+5. Run `python .\scripts\build_data.py`.
+
+The generated frontend will use the CSV files automatically when they exist, while keeping the public Fama-French and ETF layers unchanged.

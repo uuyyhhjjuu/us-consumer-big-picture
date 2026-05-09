@@ -426,10 +426,16 @@ svg {
 
 .module-grid,
 .rules-grid,
+.status-grid,
 .exposure-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.status-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 16px;
 }
 
 .exposure-grid {
@@ -437,11 +443,44 @@ svg {
 }
 
 .data-module,
+.status-card,
 .rules-grid article {
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfe;
+}
+
+.status-card {
+  display: grid;
+  gap: 8px;
+}
+
+.status-card span {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.status-card.csv_ready span {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.status-card strong {
+  font-size: 18px;
+}
+
+.status-card small,
+.status-card em {
+  color: var(--muted);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.45;
 }
 
 .data-status,
@@ -555,6 +594,7 @@ footer {
   .live-grid,
   .module-grid,
   .rules-grid,
+  .status-grid,
   .exposure-grid {
     grid-template-columns: 1fr;
   }

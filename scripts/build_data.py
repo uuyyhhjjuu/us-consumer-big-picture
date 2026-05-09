@@ -12,10 +12,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
+MANUAL = DATA / "manual"
 
 INDUSTRY_ZIP = DATA / "49_Industry_Portfolios_CSV.zip"
 FACTORS_ZIP = DATA / "F-F_Research_Data_Factors_CSV.zip"
 OUT = DATA / "consumer-data.js"
+MANUAL_VALUATION = MANUAL / "valuation.csv"
+MANUAL_EXPOSURE = MANUAL / "exposure.csv"
 
 FF_INDUSTRY_URL = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/49_Industry_Portfolios_CSV.zip"
 FF_FACTORS_URL = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip"
@@ -233,6 +236,85 @@ def read_daily_prices(monthly_fallback=None):
     return daily
 
 
+def parse_float(value):
+    if value is None:
+        return None
+    text = str(value).strip().replace("%", "")
+    if not text:
+        return None
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    return number
+
+
+def read_manual_valuation():
+    if not MANUAL_VALUATION.exists():
+        return {
+            "status": "not_connected",
+            "source": "Optional local CSV: data/manual/valuation.csv",
+            "rows": [],
+        }
+
+    rows = []
+    with MANUAL_VALUATION.open("r", encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f):
+            sector = (row.get("sector") or "").strip()
+            if sector not in {"staples", "discretionary", "market"}:
+                continue
+            item = {
+                "date": (row.get("date") or "").strip(),
+                "sector": sector,
+                "label": (row.get("label") or sector).strip(),
+                "peTtm": parse_float(row.get("pe_ttm")),
+                "epsTtm": parse_float(row.get("eps_ttm")),
+                "roeTtm": parse_float(row.get("roe_ttm")),
+                "source": (row.get("source") or "manual").strip(),
+            }
+            rows.append(item)
+
+    return {
+        "status": "connected" if rows else "empty",
+        "source": str(MANUAL_VALUATION.relative_to(ROOT)).replace("\\", "/"),
+        "rows": rows,
+    }
+
+
+def read_manual_exposure(default_exposure):
+    if not MANUAL_EXPOSURE.exists():
+        return {
+            "status": "proxy",
+            "source": "Fama-French proxy baskets",
+            "data": default_exposure,
+        }
+
+    exposure = {"staples": [], "discretionary": []}
+    with MANUAL_EXPOSURE.open("r", encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f):
+            sector = (row.get("sector") or "").strip()
+            if sector not in exposure:
+                continue
+            weight = parse_float(row.get("weight"))
+            if weight is None:
+                continue
+            exposure[sector].append(
+                {
+                    "name": (row.get("name") or row.get("label") or "").strip(),
+                    "label": (row.get("label") or row.get("name") or "").strip(),
+                    "weight": weight,
+                    "source": (row.get("source") or "manual").strip(),
+                }
+            )
+
+    has_rows = any(exposure[key] for key in exposure)
+    return {
+        "status": "connected" if has_rows else "empty",
+        "source": str(MANUAL_EXPOSURE.relative_to(ROOT)).replace("\\", "/"),
+        "data": exposure if has_rows else default_exposure,
+    }
+
+
 def average_return(values, names):
     vals = [values.get(name) for name in names if values.get(name) is not None]
     return None if not vals else sum(vals) / len(vals)
@@ -396,12 +478,31 @@ def build_dataset():
     annual = build_annual(monthly)
     daily = read_daily_prices(monthly)
     daily_annual = build_annual(daily)
+    default_exposure = {
+        "staples": [
+            {"name": "Food", "label": "食品", "weight": 20},
+            {"name": "Soda", "label": "软饮", "weight": 20},
+            {"name": "Beer", "label": "酒类", "weight": 20},
+            {"name": "Smoke", "label": "烟草", "weight": 20},
+            {"name": "Hshld", "label": "家庭用品", "weight": 20},
+        ],
+        "discretionary": [
+            {"name": "Toys", "label": "玩具", "weight": 14.3},
+            {"name": "Fun", "label": "娱乐", "weight": 14.3},
+            {"name": "Books", "label": "出版", "weight": 14.3},
+            {"name": "Clths", "label": "服装", "weight": 14.3},
+            {"name": "Autos", "label": "汽车", "weight": 14.3},
+            {"name": "Rtail", "label": "零售", "weight": 14.3},
+            {"name": "Meals", "label": "餐饮", "weight": 14.3},
+        ],
+    }
+    exposure_bundle = read_manual_exposure(default_exposure)
 
     dataset = {
         "meta": {
             "title": "Big Picture: US Consumer Sectors",
             "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "createdFrom": "Kenneth French Data Library, Fama/French Research Factors, Stooq ETF daily prices",
+            "createdFrom": "Kenneth French Data Library, Fama/French Research Factors, public ETF daily prices",
             "sourceVintage": "Fama-French files include their own CRSP vintage in the downloaded CSV header.",
             "longStart": monthly[0]["date"],
             "longEnd": monthly[-1]["date"],
@@ -416,6 +517,32 @@ def build_dataset():
                 "Long-history series are proxy portfolios, not official S&P GICS sector indexes.",
                 "Daily live layer uses XLP, XLY, and SPY ETFs as investable sector proxies.",
                 "Official S&P 500 GICS sector valuation, EPS, ROE, and holdings modules are framed for later data connection.",
+            ],
+            "dataReadiness": [
+                {
+                    "name": "百年价格/回报/回撤/波动",
+                    "status": "connected",
+                    "source": "Kenneth French Data Library",
+                    "cadence": "monthly",
+                },
+                {
+                    "name": "每日价格层",
+                    "status": "connected",
+                    "source": "SPY / XLP / XLY public ETF daily prices",
+                    "cadence": "daily",
+                },
+                {
+                    "name": "PE / EPS / ROE",
+                    "status": "csv_ready",
+                    "source": "data/manual/valuation.csv or WindPy later",
+                    "cadence": "manual now, automated later",
+                },
+                {
+                    "name": "行业暴露/权重",
+                    "status": "csv_ready",
+                    "source": "data/manual/exposure.csv or ETF holdings later",
+                    "cadence": "manual now, automated later",
+                },
             ],
         },
         "monthly": monthly,
@@ -440,24 +567,9 @@ def build_dataset():
                 "market": summary_stats(daily, daily_annual, "market", "252d"),
             },
         },
-        "exposure": {
-            "staples": [
-                {"name": "Food", "label": "食品", "weight": 20},
-                {"name": "Soda", "label": "软饮", "weight": 20},
-                {"name": "Beer", "label": "酒类", "weight": 20},
-                {"name": "Smoke", "label": "烟草", "weight": 20},
-                {"name": "Hshld", "label": "家庭用品", "weight": 20},
-            ],
-            "discretionary": [
-                {"name": "Toys", "label": "玩具", "weight": 14.3},
-                {"name": "Fun", "label": "娱乐", "weight": 14.3},
-                {"name": "Books", "label": "出版", "weight": 14.3},
-                {"name": "Clths", "label": "服装", "weight": 14.3},
-                {"name": "Autos", "label": "汽车", "weight": 14.3},
-                {"name": "Rtail", "label": "零售", "weight": 14.3},
-                {"name": "Meals", "label": "餐饮", "weight": 14.3},
-            ],
-        },
+        "valuation": read_manual_valuation(),
+        "exposure": exposure_bundle["data"],
+        "exposureMeta": {"status": exposure_bundle["status"], "source": exposure_bundle["source"]},
     }
     return dataset
 

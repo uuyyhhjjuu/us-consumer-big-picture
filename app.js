@@ -29,6 +29,7 @@ const ranges = {
 
 const fmtPct = (value, digits = 1) => `${(value * 100).toFixed(digits)}%`;
 const fmtNum = (value, digits = 0) => Number(value).toLocaleString("en-US", { maximumFractionDigits: digits });
+const fmtMaybe = (value, suffix = "", digits = 1) => Number.isFinite(value) ? `${Number(value).toFixed(digits)}${suffix}` : "--";
 
 function $(selector) {
   return document.querySelector(selector);
@@ -490,6 +491,76 @@ function renderExposure() {
   renderExposureList("#disc-exposure", data.exposure.discretionary);
 }
 
+function renderDataReadiness() {
+  const statusText = {
+    connected: "已接入",
+    csv_ready: "CSV 就绪",
+    proxy: "代理口径",
+    not_connected: "待接入",
+  };
+  $("#data-readiness").innerHTML = data.meta.dataReadiness
+    .map((item) => `
+      <article class="status-card ${item.status}">
+        <span>${statusText[item.status] || item.status}</span>
+        <strong>${item.name}</strong>
+        <small>${item.source}</small>
+        <em>${item.cadence}</em>
+      </article>
+    `)
+    .join("");
+}
+
+function renderValuation() {
+  const rows = data.valuation?.rows || [];
+  const latestBySector = {};
+  rows.forEach((row) => {
+    if (!latestBySector[row.sector] || row.date > latestBySector[row.sector].date) {
+      latestBySector[row.sector] = row;
+    }
+  });
+
+  if (Object.keys(latestBySector).length) {
+    $("#valuation-modules").innerHTML = ["staples", "discretionary", "market"]
+      .map((key) => {
+        const row = latestBySector[key];
+        if (!row) {
+          return `<article class="data-module"><em class="data-status">CSV 未提供</em><span>${labels[key]}</span><strong>--</strong><p>可在 data/manual/valuation.csv 中补充该口径。</p></article>`;
+        }
+        return `
+          <article class="data-module connected">
+            <em class="data-status">已从 CSV 接入</em>
+            <span>${row.label || labels[key]}</span>
+            <strong>PE ${fmtMaybe(row.peTtm, "x", 1)}</strong>
+            <p>EPS TTM ${fmtMaybe(row.epsTtm, "", 2)} · ROE TTM ${fmtMaybe(row.roeTtm, "%", 1)} · ${row.date || "未标日期"} · ${row.source}</p>
+          </article>
+        `;
+      })
+      .join("");
+    return;
+  }
+
+  $("#valuation-modules").innerHTML = `
+    <article class="data-module">
+      <em class="data-status">CSV 入口已预留</em>
+      <span>PE</span>
+      <strong>估值冷热</strong>
+      <p>把 Wind、Excel 或付费 API 导出的 pe_ttm 放入 data/manual/valuation.csv 后，本模块会自动显示最新 PE。</p>
+    </article>
+    <article class="data-module">
+      <em class="data-status">CSV 入口已预留</em>
+      <span>EPS</span>
+      <strong>盈利支撑</strong>
+      <p>把 eps_ttm 放入同一张 CSV 后，可作为赛前增强版的盈利趋势入口，后续再升级为时间序列图。</p>
+    </article>
+    <article class="data-module">
+      <em class="data-status">CSV 入口已预留</em>
+      <span>ROE</span>
+      <strong>盈利质量</strong>
+      <p>把 roe_ttm 放入 CSV 后，可快速比较必选、可选与市场基准的资本回报差异。</p>
+    </article>
+  `;
+}
+
 function renderExposureList(selector, rows) {
   $(selector).innerHTML = rows
     .map((row) => `<div class="bar-row"><span>${row.label}</span><div class="bar-track"><div class="bar-fill" style="width:${row.weight}%"></div></div><strong>${row.weight.toFixed(1)}%</strong></div>`)
@@ -612,6 +683,8 @@ function renderAll() {
   renderMatrix();
   renderDrawdownChart();
   renderVolatilityChart();
+  renderDataReadiness();
+  renderValuation();
   renderExposure();
   renderRangeControls();
 }
