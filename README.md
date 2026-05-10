@@ -65,3 +65,5 @@ If WindPy is temporarily unavailable, the site can still accept presentation-rea
 5. Run `python .\scripts\build_data.py`.
 
 The generated frontend will use the CSV files automatically when they exist, while keeping the public Fama-French and ETF layers unchanged.
+
+For the competition submission checklist, see `docs/LAST_MINUTE_SUBMISSION_GUIDE.md`.

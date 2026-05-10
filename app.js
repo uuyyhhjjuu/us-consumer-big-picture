@@ -221,6 +221,61 @@ function renderCards() {
     .join("");
 }
 
+function periodReturn(series, key, lookback) {
+  if (!series.length) return 0;
+  const end = series.length - 1;
+  const start = Math.max(0, end - lookback);
+  return series[end].levels[key] / series[start].levels[key] - 1;
+}
+
+function drawdownLabel(value) {
+  if (value >= -0.03) return "历史高位附近";
+  if (value >= -0.15) return "温和回撤";
+  if (value >= -0.3) return "压力区间";
+  return "深度压力";
+}
+
+function temperatureLabel(percentile) {
+  if (percentile >= 0.7) return "偏热";
+  if (percentile <= 0.35) return "偏冷";
+  return "中性";
+}
+
+function renderBrief() {
+  const dailyLookback = Math.min(252, Math.max(1, data.daily.length - 1));
+  const monthlyLookback = Math.min(12, Math.max(1, data.monthly.length - 1));
+  const recentSource = data.meta.dailyIsFallback ? data.monthly : data.daily;
+  const lookback = data.meta.dailyIsFallback ? monthlyLookback : dailyLookback;
+  const recent = {
+    staples: periodReturn(recentSource, "staples", lookback),
+    discretionary: periodReturn(recentSource, "discretionary", lookback),
+    market: periodReturn(recentSource, "market", lookback),
+  };
+  const leader = recent.staples >= recent.discretionary ? "必选消费" : "可选消费";
+  const activeStats = data.summary.long[activeAsset];
+  const longGap = data.summary.long.staples.cagr - data.summary.long.discretionary.cagr;
+  const activeRecentExcess = recent[activeAsset] - recent.market;
+  const activeDrawdown = activeStats.currentDrawdown;
+  const activeTemperature = temperatureLabel(activeStats.volPercentile || 0);
+  const cards = [
+    ["当前阶段", drawdownLabel(activeDrawdown), `${labels[activeAsset]}当前回撤 ${fmtPct(activeDrawdown, 1)}`],
+    ["近12月主线", leader, `必选 ${fmtPct(recent.staples, 1)} / 可选 ${fmtPct(recent.discretionary, 1)} / 市场 ${fmtPct(recent.market, 1)}`],
+    ["相对市场", fmtPct(activeRecentExcess, 1), `${labels[activeAsset]}近12月相对标普500代理`],
+    ["风险温度", activeTemperature, `36M 波动率历史分位 ${fmtPct(activeStats.volPercentile || 0, 0)}`],
+  ];
+
+  $("#brief-grid").innerHTML = cards
+    .map(([label, value, sub]) => `<article class="brief-card"><span>${label}</span><strong>${value}</strong><small>${sub}</small></article>`)
+    .join("");
+
+  $("#brief-narrative").innerHTML = `
+    <strong>答辩口径：</strong>
+    <span>百年维度看，必选消费长期年化较可选消费高 ${fmtPct(longGap, 2)}，但不同周期的相对强弱会显著切换；当前可先用 ${leader} 作为近一年主线观察对象。</span>
+    <span>${labels[activeAsset]}现在处于“${drawdownLabel(activeDrawdown)}”，波动温度为“${activeTemperature}”，适合继续用下方回撤、相对收益和波动图验证风险收益位置。</span>
+    <span>估值、盈利和真实权重已经预留 CSV/Wind 接口，赛前只要补入最新快照，就能从“历史位置”延伸到“市场贵不贵、盈利是否支撑”。</span>
+  `;
+}
+
 function renderLiveCards() {
   const latest = data.daily[data.daily.length - 1];
   const cards = ["staples", "discretionary", "market"].map((key) => {
@@ -674,6 +729,7 @@ function renderAll() {
   renderHero();
   renderHeroTrend();
   renderCards();
+  renderBrief();
   renderLiveCards();
   renderDailyChart();
   renderPriceChart();
@@ -694,6 +750,7 @@ all("[data-asset]").forEach((button) => {
     activeAsset = button.dataset.asset;
     all("[data-asset]").forEach((b) => b.classList.toggle("active", b === button));
     renderCards();
+    renderBrief();
     renderDailyChart();
     renderPriceChart();
     renderAnnualChart();

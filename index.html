@@ -10,6 +10,7 @@
     <header class="topbar">
       <a class="brand" href="#hero">Big Picture</a>
       <nav class="nav" aria-label="页面导航">
+        <a href="#panel-brief">投研结论</a>
         <a href="#panel-live">每日市场</a>
         <a href="#panel-price">走势</a>
         <a href="#panel-relative">相对回报</a>
@@ -19,6 +20,7 @@
         <a href="#panel-drawdown">回撤</a>
         <a href="#panel-volatility">波动率</a>
         <a href="#panel-data">数据层</a>
+        <a href="#panel-ai">AI 工作流</a>
         <a href="#panel-valuation">PE / EPS / ROE</a>
         <a href="#panel-positioning">基金仓位</a>
         <a href="#panel-exposure">行业暴露</a>
@@ -54,6 +56,18 @@
       </section>
 
       <section class="kpi-grid" id="summary-cards"></section>
+
+      <section id="panel-brief" class="panel brief-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">ONE-SCREEN READ</p>
+            <h2>一屏投研结论</h2>
+            <p>把百年历史、近一年走势、回撤和波动率压缩成答辩时最容易讲清楚的当前判断。</p>
+          </div>
+        </div>
+        <div id="brief-grid" class="brief-grid"></div>
+        <div id="brief-narrative" class="brief-narrative"></div>
+      </section>
 
       <section id="panel-live" class="panel">
         <div class="panel-head">
@@ -178,6 +192,38 @@
           <article>
             <h3>长期产品版</h3>
             <p>WindPy、ETF issuer holdings、SEC 13F、付费财务 API 可以逐步替换 CSV 层，但前端图表和展示结构不需要重写。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="panel-ai" class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">AI RESEARCH WORKFLOW</p>
+            <h2>AI 如何把投研想法产品化</h2>
+            <p>这个作品的重点不是单张图，而是把研究员的模糊问题拆成可复用的数据产品和交互式研究框架。</p>
+          </div>
+        </div>
+        <div class="workflow-grid">
+          <article>
+            <span>01</span>
+            <strong>问题拆解</strong>
+            <p>从“百年尺度下美国消费行业处在什么位置”拆成走势、相对收益、回撤、波动、估值、仓位和暴露。</p>
+          </article>
+          <article>
+            <span>02</span>
+            <strong>数据工程</strong>
+            <p>用公开数据先构建可复现底座，再预留 Wind、CSV、ETF holdings 和 13F 的统一接入口。</p>
+          </article>
+          <article>
+            <span>03</span>
+            <strong>交互呈现</strong>
+            <p>把 Excel 式分析改造成可拖拽、可筛选、可解释的网页，适合日常跟踪和投研会展示。</p>
+          </article>
+          <article>
+            <span>04</span>
+            <strong>持续迭代</strong>
+            <p>后续只需要替换数据源和增加解释层，就能扩展为正式的消费行业 Big Picture 平台。</p>
           </article>
         </div>
       </section>

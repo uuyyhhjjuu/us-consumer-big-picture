@@ -257,7 +257,8 @@ h3 {
 }
 
 .kpi-grid,
-.live-grid {
+.live-grid,
+.brief-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
@@ -308,6 +309,55 @@ h3 {
   background: var(--surface);
   box-shadow: var(--shadow);
   scroll-margin-top: 122px;
+}
+
+.brief-panel {
+  border-color: #cbd5e1;
+}
+
+.brief-grid {
+  padding: 0 0 16px;
+}
+
+.brief-card {
+  min-height: 120px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.brief-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.brief-card strong {
+  display: block;
+  margin: 12px 0 7px;
+  font-size: 24px;
+}
+
+.brief-card small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.brief-narrative {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1f2937;
+  line-height: 1.65;
+}
+
+.brief-narrative strong {
+  color: #1d4ed8;
 }
 
 .panel-head {
@@ -427,10 +477,15 @@ svg {
 .module-grid,
 .rules-grid,
 .status-grid,
+.workflow-grid,
 .exposure-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.workflow-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .status-grid {
@@ -444,11 +499,38 @@ svg {
 
 .data-module,
 .status-card,
+.workflow-grid article,
 .rules-grid article {
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfe;
+}
+
+.workflow-grid article span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: #111827;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.workflow-grid article strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+.workflow-grid article p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.65;
 }
 
 .status-card {
@@ -592,9 +674,11 @@ footer {
 
   .kpi-grid,
   .live-grid,
+  .brief-grid,
   .module-grid,
   .rules-grid,
   .status-grid,
+  .workflow-grid,
   .exposure-grid {
     grid-template-columns: 1fr;
   }
