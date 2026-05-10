@@ -477,11 +477,16 @@ svg {
 .module-grid,
 .rules-grid,
 .status-grid,
+.value-grid,
 .workflow-grid,
 .exposure-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.value-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .workflow-grid {
@@ -499,12 +504,38 @@ svg {
 
 .data-module,
 .status-card,
+.value-grid article,
 .workflow-grid article,
 .rules-grid article {
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfe;
+}
+
+.value-grid article {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96)),
+    linear-gradient(135deg, rgba(49, 87, 213, 0.08), rgba(67, 179, 107, 0.08));
+}
+
+.value-grid article span {
+  display: block;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.value-grid article strong {
+  display: block;
+  margin: 10px 0 8px;
+  font-size: 18px;
+}
+
+.value-grid article p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.65;
 }
 
 .workflow-grid article span {
@@ -678,6 +709,7 @@ footer {
   .module-grid,
   .rules-grid,
   .status-grid,
+  .value-grid,
   .workflow-grid,
   .exposure-grid {
     grid-template-columns: 1fr;

@@ -67,3 +67,5 @@ If WindPy is temporarily unavailable, the site can still accept presentation-rea
 The generated frontend will use the CSV files automatically when they exist, while keeping the public Fama-French and ETF layers unchanged.
 
 For the competition submission checklist, see `docs/LAST_MINUTE_SUBMISSION_GUIDE.md`.
+
+For the AI investment research competition product brief, see `docs/AI_RESEARCH_COMPETITION_PRODUCT_BRIEF.md`.

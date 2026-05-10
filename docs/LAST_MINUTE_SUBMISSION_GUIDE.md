@@ -2,6 +2,8 @@
 
 Use this guide for the competition submission version.
 
+Full product brief: `docs/AI_RESEARCH_COMPETITION_PRODUCT_BRIEF.md`.
+
 ## What is already presentation-ready
 
 - One-screen research conclusion generated from existing data.
